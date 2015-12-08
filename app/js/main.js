@@ -13,6 +13,12 @@ var gui = require('nw.gui'),
     version = require(path.join(process.cwd(), 'package.json')).version,
     LOCALAPPDATA = path.join(process.env.LOCALAPPDATA, 'SPM_JSON');
 
+    try {
+      var stats = fs.lstatSync(LOCALAPPDATA);
+    } catch(err) {
+      fs.mkdirSync(LOCALAPPDATA);
+    }
+
 //gui.Window.get().showDevTools();
 
 var spinOpts = {
