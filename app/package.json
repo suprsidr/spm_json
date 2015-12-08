@@ -1,21 +1,21 @@
 {
-  "name": "nw-boilerplate",
-  "productName": "NW Boilerplate",
-  "description": "Starter for NW.js application. Out of the box ready for serious stuff.",
+  "name": "SPM_JSON",
+  "productName": "SPM Transmitter/Receiver JSON Builder",
+  "main": "./html/index.html",
+  "description": "Walk SPM/SRD directory and write file list to JSON",
+  "repository": "n/a",
   "version": "0.1.0",
-  "author": "Mr Gumby <gumby@sillywalks.com>",
-  "main": "app.html",
   "window": {
-    "icon": "icon.png",
-    "show": true,
-    "toolbar": true,
-    "width": 1000,
-    "height": 600,
-    "min_width": 800,
-    "min_height": 400,
-    "position": "center"
+    "title": "SPM JSON",
+    "icon": "./img/logo_32x32.png",
+    "width": 600,
+    "height": 694,
+    "frame": false,
+    "toolbar": false
   },
   "dependencies": {
-    "fs-jetpack": "^0.6.4"
+    "async": "^0.9.0",
+    "node-zip-dir": "^1.0.2",
+    "walkr": "^0.0.3"
   }
 }
