@@ -47,7 +47,13 @@ var textarea = document.getElementById('thetext');
 
 Object.prototype.concat = function(o) {
   for (var key in o) {
-    this[key] = o[key];
+    if(typeof o[key] === 'object') {
+      for (var k in o[key]) {
+        this[key][k] = o[key][k];
+      }
+    } else {
+      this[key] = o[key];
+    }
   }
   return this;
 }
@@ -87,7 +93,7 @@ fs.readFile(LOCALAPPDATA + '/spm_settings.json', 'utf-8', function (err, content
     settings = {
       receiverFilesPath: '//marketing/internal/Market Share/Spektrum SRD Files for Upload/',
 	    transmitterFilesPath: '//marketing/internal/Market Share/Spektrum SPM Files for Upload/',
-      savePaths: ['//marketing/internal/Market Share/Wayne Patterson/', '//testiis/websites/ProdInfo/Files/', '//cmp02-web01-tst/websites/prodinfo/Files/', '//cb2/ProdInfo/Files/'],
+      savePaths: ['//deviis/ProdInfo/Files/', '//testiis/websites/ProdInfo/Files/', '//cmp02-web01-tst/websites/prodinfo/Files/', '//cb2/ProdInfo/Files/'],
       exts: ['spm','srm','srd'],
       //tfsPath: 'C:\\xampp\\htdocs\\StaticCMSContent\\media\\scripts\\',
       dirs: ['DX7s_Setups', 'DX8_Setups', 'DXe_Setups', 'Gen2_Setups'],
@@ -101,7 +107,8 @@ fs.readFile(LOCALAPPDATA + '/spm_settings.json', 'utf-8', function (err, content
     }
 	  settings.dirs.forEach(function(dir) {
 		  settings.filesCopied[dir] = {};
-	  })
+	  });
+    settings.filesCopied['srd'] = {};
 	  log('saving settings');
     fs.writeFile(LOCALAPPDATA + '/spm_settings.json', JSON.stringify(settings));
   } else {
@@ -266,7 +273,7 @@ function walkFiles() {
                 log('error saving settings: ' + err);
               }else {
                 log('saved spm_settings.json');
-                $('a').show();
+                $('a[href="setups"]').show();
               }
             });
             //console.log(files);
@@ -298,7 +305,8 @@ function walkFiles() {
                   if(err) {
                     log('error: ' + err);
                   }
-                  log('done');
+                  log('done with transmitter files');
+                  walkSrdFiles();
                 });
               }
             });
@@ -309,6 +317,158 @@ function walkFiles() {
   	  });
 
     });
+}
+
+function walkSrdFiles() {
+  spinner.spin(document.querySelector('body'));
+  settings.receiverFilesPath = $('#receiverFilesPath').val();
+  var obj = {};  // our json object for web consumption
+  var filesToCopy = {};
+  filesToCopy.srd = {};
+  filesToCopy.srd.All = {
+    source: path.join(settings.receiverFilesPath, 'AS3X_receiver_config_files.zip'),
+    filename: 'AS3X_receiver_config_files.zip',
+    mtime: Date.now()
+  };
+
+
+  walkr(settings.receiverFilesPath)
+  .on('file', function (file) {
+    if(file.name.split('.')[1].toLowerCase() === 'srd' || file.name.split('.')[1].toLowerCase() === 'srm') {
+      var t =  'File found: ' + file.name;
+      /**
+       * we use the segments of the file.source to buld our object
+       * eg. "//marketing/internal/Market Share/Spektrum SRD Files for Upload/EFL2865 Slick 3D 480 ARF/EFL_Slick 3D 480 ARF.srd"
+       * parts[parts.length - 2] = EFL2865 Slick 3D 480 ARF
+       * parts[parts.length - 2].split(' ')[0] = EFL2865
+       * file.name = EFL_Slick 3D 480 ARF.srd
+       */
+      var parts = file.source.split('/'), title = parts[parts.length - 2], prodId = title.split(' ')[0];
+      obj[prodId] = {
+        title: title,
+        file: file.name
+      }
+      // check to see if we've got this one already
+      if(!settings.filesCopied.srd[prodId]) {
+        t += ' - adding to copy queue';
+        filesToCopy.srd[prodId] = {
+          source: file.source,
+          filename: file.name,
+          mtime: Date.parse(file.stat.mtime)
+        };
+        // it exists but what if it's been modified.
+      } else if(settings.filesCopied.srd[prodId].mtime !== Date.parse(file.stat.mtime)) {
+        t += ' - adding to copy queue';
+        filesToCopy.srd[prodId] = {
+          source: file.source,
+          filename: file.name,
+          mtime: Date.parse(file.stat.mtime)
+        };
+      } else {
+        t += '';
+      }
+      log(t);
+    }
+  })
+  .start(function (err) {  // this acts more like a complete than start - but also triggers execution??
+    if (err) {
+      log('error walking files: \n' + err);
+      return false;
+    }
+    var savePaths = [];
+    $('input:checked').each(function () {
+      savePaths.push($(this).val());
+    });
+
+    spinner.spin(false);
+
+    // save our local copy
+    fs.writeFile(path.join(LOCALAPPDATA, '/srd.json'), JSON.stringify(obj), function (err) {
+      if (err) {
+        log('error saving: srd.json \n' + err);
+      } else {
+        // save our srd.json to each save path
+        async.each(savePaths, function(path, callback) {
+          copy(LOCALAPPDATA + '/srd.json', path + 'srd.json', function(err) {
+            if(err) {
+              callback('error copying: ' + path + 'srd.json \n' + err);
+            } else {
+              log('copied: ' + path + 'srd.json');
+              callback();
+            }
+          });
+        }, function(err) {
+          if(err) {
+            log('error: ' + err);
+          }
+          log('done copying srd.json files');
+        });
+      }
+    });
+
+    // save all of our filesToCopy to each save path
+    async.each(savePaths, function(path, callback) {
+      async.each(['srd'], function(dir, cb) {
+        async.forEachOf(filesToCopy[dir], function (v, k, c) {
+          if(typeof v === 'object') {
+            copy(v.source, path + 'SPM/' + v.filename, function(err) {
+              if(err) {
+                c('error copying: ' + path + 'SPM/' + v.filename + '\n' + err);
+              } else {
+                log('copied: ' + path + 'SPM/' + v.filename);
+                c();
+              }
+            });
+          }
+        }, function(err) {
+          if(err) {
+            //call parent callback
+            cb('filesToCopy[dir] each error: ' + err)
+          }
+          //call parent callback to move on to next item
+          cb();
+        });
+      }, function(err) {
+        if(err) {
+          //call parent callback
+          callback('settings.dirs each error: ' + err)
+        }
+        //call parent callback to move on to next item
+        callback();
+      });
+    }, function(err) {
+      if(err) {
+        log(err);
+        return;
+      }
+      log('All Done');
+    });
+
+    zipper.zip(settings.receiverFilesPath, settings.receiverFilesPath + 'AS3X_receiver_config_files.zip').then(function () {
+      savePaths.forEach(function (path) {
+        copy(settings.receiverFilesPath + 'AS3X_receiver_config_files.zip', path + 'SPM/' + 'AS3X_receiver_config_files.zip', function (err) {
+          if (err) {
+            log('error copying: ' + path + 'SPM/' + 'AS3X_receiver_config_files.zip' + '\n' + err);
+          } else {
+            log('copied: ' + path + 'SPM/' + 'AS3X_receiver_config_files.zip')
+          }
+        });
+      });
+    }).catch(function (err) {
+      log('line 447 error: ' + err);
+    });
+    // save our setting w/ the list of files copied
+    settings.filesCopied = settings.filesCopied.concat(filesToCopy);
+    fs.writeFile(path.join(LOCALAPPDATA, '/spm_settings.json'), JSON.stringify(settings), function (err) {
+      if (err) {
+        log('error saving settings: ' + err);
+      } else {
+        log('saved settings.json');
+        $('a[href="srd"]').show();
+        log('done');
+      }
+    });
+  });
 }
 
 $('#setups, #srd').on('change', function (e) {
