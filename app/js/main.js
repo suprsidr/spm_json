@@ -93,7 +93,7 @@ fs.readFile(LOCALAPPDATA + '/spm_settings.json', 'utf-8', function (err, content
     settings = {
       receiverFilesPath: '//marketing/internal/Market Share/Spektrum SRD Files for Upload/',
 	    transmitterFilesPath: '//marketing/internal/Market Share/Spektrum SPM Files for Upload/',
-      savePaths: ['//deviis/ProdInfo/Files/', '//testiis/websites/ProdInfo/Files/', '//cmp02-web01-tst/websites/prodinfo/Files/', '//cb2/ProdInfo/Files/'],
+      savePaths: ['//deviis/ProdInfo/Files/', '//testiis/websites/ProdInfo/Files/', '//cmp02-web01-tst/websites/prodinfo/Files/', '//cmp02-nexus01/websites/prodinfo/Files/'],
       exts: ['spm','srm','srd'],
       //tfsPath: 'C:\\xampp\\htdocs\\StaticCMSContent\\media\\scripts\\',
       dirs: ['DX7s_Setups', 'DX8_Setups', 'DXe_Setups', 'Gen2_Setups'],
