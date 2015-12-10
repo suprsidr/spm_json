@@ -224,7 +224,7 @@ function walkFiles() {
   		  if(idx < settings.dirs.length) {
   			  walkFiles();
   		  } else {
-  			  spinner.spin(false);
+  			  //spinner.spin(false);
           // save all of our filesToCopy to each save path
           log('Copying files to destination(s)');
           var savePaths = [];
@@ -320,7 +320,7 @@ function walkFiles() {
 }
 
 function walkSrdFiles() {
-  spinner.spin(document.querySelector('body'));
+  //spinner.spin(document.querySelector('body'));
   settings.receiverFilesPath = $('#receiverFilesPath').val();
   var obj = {};  // our json object for web consumption
   var filesToCopy = {};
@@ -380,7 +380,7 @@ function walkSrdFiles() {
       savePaths.push($(this).val());
     });
 
-    spinner.spin(false);
+
 
     // save our local copy
     fs.writeFile(path.join(LOCALAPPDATA, '/srd.json'), JSON.stringify(obj), function (err) {
@@ -441,6 +441,7 @@ function walkSrdFiles() {
         log(err);
         return;
       }
+
       log('All Done');
     });
 
@@ -466,6 +467,7 @@ function walkSrdFiles() {
         log('saved settings.json');
         $('a[href="srd"]').show();
         log('done');
+        spinner.spin(false);
       }
     });
   });
