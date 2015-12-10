@@ -1,8 +1,6 @@
 'use strict';
 $(document).foundation();
 
-if(!Array.from){Array.from=(function(){var toStr=Object.prototype.toString;var isCallable=function(fn){return typeof fn==='function'||toStr.call(fn)==='[object Function]'};var toInteger=function(value){var number=Number(value);if(isNaN(number)){return 0}if(number===0||!isFinite(number)){return number}return(number>0?1:-1)*Math.floor(Math.abs(number))};var maxSafeInteger=Math.pow(2,53)-1;var toLength=function(value){var len=toInteger(value);return Math.min(Math.max(len,0),maxSafeInteger)};return function from(arrayLike){var C=this;var items=Object(arrayLike);if(arrayLike==null){throw new TypeError("Array.from requires an array-like object - not null or undefined");}var mapFn=arguments.length>1?arguments[1]:void undefined;var T;if(typeof mapFn!=='undefined'){if(!isCallable(mapFn)){throw new TypeError('Array.from: when provided, the second argument must be a function');}if(arguments.length>2){T=arguments[2]}}var len=toLength(items.length);var A=isCallable(C)?Object(new C(len)):new Array(len);var k=0;var kValue;while(k<len){kValue=items[k];if(mapFn){A[k]=typeof T==='undefined'?mapFn(kValue,k):mapFn.call(T,kValue,k)}else{A[k]=kValue}k+=1}A.length=len;return A}}())}
-
 var gui = require('nw.gui'),
     fs = require('fs'),
     walkr = require('walkr'),
@@ -13,11 +11,11 @@ var gui = require('nw.gui'),
     version = require(path.join(process.cwd(), 'package.json')).version,
     LOCALAPPDATA = path.join(process.env.LOCALAPPDATA, 'SPM_JSON');
 
-    try {
-      var stats = fs.lstatSync(LOCALAPPDATA);
-    } catch(err) {
-      fs.mkdirSync(LOCALAPPDATA);
-    }
+try {
+  var stats = fs.lstatSync(LOCALAPPDATA);
+} catch(err) {
+  fs.mkdirSync(LOCALAPPDATA);
+}
 
 //gui.Window.get().showDevTools();
 
@@ -125,24 +123,25 @@ fs.readFile(LOCALAPPDATA + '/spm_settings.json', 'utf-8', function (err, content
 
 function setup() {
   $('#receiverFilesPath').val(settings.receiverFilesPath);
-	$('#transmitterFilesPath').val(settings.transmitterFilesPath);
-  settings.savePaths.forEach(function(path, i) {
+  $('#transmitterFilesPath').val(settings.transmitterFilesPath);
+  settings.savePaths.forEach(function (path, i) {
     $('.checks').append(
       $('<input type="checkbox" />').attr({id: 'cb_' + i, checked: 'checked'}).val(path))
       .append($('<label />').attr({for: 'cb_' + i}).text(path))
       .append('<br />');
   });
 
-  for(var key in settings.transmitters) {
-    if(settings.transmitters.hasOwnProperty(key)) {
+  for (var key in settings.transmitters) {
+    if (settings.transmitters.hasOwnProperty(key)) {
       $('.transmitters').append($('<label />').attr({for: 'tm_' + key}).text(key.split('_')[0]))
-      .append($('<input type="text" />').attr({id: 'tm_' + key}).val(settings.transmitters[key].join(',')))
-      .append('<br />');
+        .append($('<input type="text" />').attr({id: 'tm_' + key}).val(settings.transmitters[key].join(',')))
+        .append('<br />');
     }
   }
 }
 
 function walkFiles() {
+
   spinner.spin(document.querySelector('body'));
   var obj = {};  // our json object for web consumption
   files[settings.dirs[idx]] = [];
@@ -181,7 +180,7 @@ function walkFiles() {
         obj[prodId] = {
           title: title,
           file: file.name
-        }
+        };
         // check to see if we've got this one already
         if(!settings.filesCopied[settings.dirs[idx]][prodId]) {
           t += ' - adding to copy queue';
@@ -225,165 +224,85 @@ function walkFiles() {
           $('input:checked').each(function(){
             savePaths.push($(this).val());
           });
-          // save our setups.json to each save path
-          savePaths.forEach(function(path) {
-            copy(LOCALAPPDATA + 'setups.json', path + 'setups.json', function(err) {
-              if(err) {
-                log('error copying: ' + path + 'setups.json \n' + err);
-              } else {
-                log('copied: ' + path + 'setups.json');
-              }
-            });
-          });
-          savePaths.forEach(function(path) {
+          // the following is quite a mess!
+          async.each(savePaths, function(path, callback) {
             async.each(settings.dirs, function(dir, cb) {
-              $.each(filesToCopy[dir], function(k, v) {
+              async.forEachOf(filesToCopy[dir], function (v, k, c) {
                 if(typeof v === 'object') {
                   copy(v.source, path + 'SPM/' + v.filename, function(err) {
                     if(err) {
-                      log('error copying: ' + path + 'SPM/' + v.filename + '\n' + err);
+                      c('error copying: ' + path + 'SPM/' + v.filename + '\n' + err);
                     } else {
                       log('copied: ' + path + 'SPM/' + v.filename);
+                      c();
                     }
                   });
                 }
+              }, function(err) {
+                if(err) {
+                  //call parent callback
+                  cb('filesToCopy[dir] each error: ' + err)
+                }
+                //call parent callback to move on to next item
+                cb();
               });
-              cb();
             }, function(err) {
-              log('error copying files: \n' + err);
-            });
-
-          });
-  			  // save our setting w/ the list of files copied
-  			  settings.filesCopied = settings.filesCopied.concat(filesToCopy);
-  			  fs.writeFile(LOCALAPPDATA + '/spm_settings.json', JSON.stringify(settings), function(err) {
-  				  if(err) {
-  					  log('error saving settings: ' + err);
-  				  }else {
-  					  log('saved spm_settings.json');
-  					  $('a').show();
-  				  }
-  			  });
-          //console.log(files);
-          // save our local copy
-          var tmp = [];
-          settings.dirs.forEach(function(dir) {
-            settings.transmitters[dir].forEach(function(transmitter) {
-              var o = {};
-              o[transmitter] = files[dir];
-              tmp.push(o);
-            })
-          });
-          fs.writeFile(LOCALAPPDATA + '/setups.json', JSON.stringify(tmp), function(err) {
-            if(err) {
-              log('error saving: setups.json \n' + err);
-            } else {
-              log('saved setups.json');
-              // save our setups.json to each save path
-              savePaths.forEach(function(path) {
-                copy(LOCALAPPDATA + '/setups.json', path + 'setups.json', function(err) {
-                  if(err) {
-                    log('error copying: ' + path + 'setups.json \n' + err);
-                  } else {
-                    log('copied: ' + path + 'setups.json');
-                  }
-                });
-              });
-            }
-          });
-  			  log('done');
-  		  }
-  	  }).catch(function(err) {
-  		  log('error zipping: ' + settings.transmitterFilesPath + settings.dirs[idx]);
-  	  });
-
-
-      /*var savePaths = [];
-      $('input:checked').each(function(){
-        savePaths.push($(this).val());
-      });
-      if(err) {
-        log('error walking files: \n' + err);
-        return false;
-      }
-      spinner.spin(false);
-
-      // save our local copy
-      fs.writeFile('./json/setups.json', JSON.stringify(obj), function(err) {
-        if(err) {
-          log('error saving: ./json/setups.json \n' + err);
-        }
-      });
-      // save our srd.json to each save path
-      savePaths.forEach(function(path) {
-        copy('./json/srd.json', path + 'setups.json', function(err) {
-          if(err) {
-            log('error copying: ' + path + 'setups.json \n' + err);
-          } else {
-            log('copied: ' + path + 'setups.json');
-          }
-        });
-      });
-      // save all of our filesToCopy to each save path
-      savePaths.forEach(function(path) {
-        $.each(filesToCopy, function(k, v) {
-          if(typeof v === 'object') {
-            copy(v.source, path + 'SPM/' + v.filename, function(err) {
               if(err) {
-                log('error copying: ' + path + 'SPM/' + v.filename + '\n' + err);
-              } else {
-                log('copied: ' + path + 'SPM/' + v.filename);
+                //call parent callback
+                callback('settings.dirs each error: ' + err)
+              }
+              //call parent callback to move on to next item
+              callback();
+            });
+          }, function(err) {
+            if(err) {
+              log('savePaths each error: ' + err)
+            }
+            //log('done savePaths each');  // launch next step
+            // save our setting w/ the list of files copied
+            settings.filesCopied = settings.filesCopied.concat(filesToCopy);
+            fs.writeFile(LOCALAPPDATA + '/spm_settings.json', JSON.stringify(settings), function(err) {
+              if(err) {
+                log('error saving settings: ' + err);
+              }else {
+                log('saved spm_settings.json');
+                $('a').show();
               }
             });
-          }
-        });
-
-      });
-      // Add files to zip
-      async.each(files, function( file, cb) {
-        var parts = file.source.split('/');
-        fs.readFile(file.source, "utf-8", function(err, data) {
-          if(err) cb(err);
-          zip.file(parts[parts.length - 2] + '/' + file.name, data, {'createFolders': true});
-          var buffer = zip.generate({base64:false,compression:'DEFLATE'});
-          fs.writeFile('./AS3X_receiver_config_files.zip', buffer, 'binary', function(err){
-            if(err) cb(err);
-            cb()
-          });
-        });
-      }, function(err){
-          if( err ) {
-            log('error adding file to zip: ' + file.name + '\n' + err + '\n';
-            theText.val(txt);
-          } else {
-            // save our zip to each save path
-            savePaths.forEach(function(path) {
-              copy('./AS3X_receiver_config_files.zip', path + 'SPM/' + 'AS3X_receiver_config_files.zip', function(err) {
-                if(err) {
-                  log('error copying: ' + path + 'SPM/' + 'AS3X_receiver_config_files.zip' + '\n' + err + '\n';
-                  theText.val(txt);
-                } else {
-                  log('copied: ' + path + 'SPM/' + 'AS3X_receiver_config_files.zip' + '\n';
-                  theText.val(txt);
-                }
+            //console.log(files);
+            // save our local copy
+            var tmp = [];
+            settings.dirs.forEach(function(dir) {
+              settings.transmitters[dir].forEach(function(transmitter) {
+                var o = {};
+                o[transmitter] = files[dir];
+                tmp.push(o);
               });
             });
-          }
-          textarea.scrollTop = textarea.scrollHeight;
-      });
-      // save our setting w/ the list of files copied
-      settings.filesCopied = settings.filesCopied.concat(filesToCopy);
-      fs.writeFile('./spm_settings.json', JSON.stringify(settings), function(err) {
-        if(err) {
-          log('error saving settings: ' + err + '\n';
-          theText.val(txt);
-        }else {
-          log('saved spm_settings.json\n';
-          theText.val(txt);
-          $('a').show();
-        }
-        textarea.scrollTop = textarea.scrollHeight;
-      });*/
+            fs.writeFile(LOCALAPPDATA + '/setups.json', JSON.stringify(tmp), function(err) {
+              if(err) {
+                log('error saving: setups.json \n' + err);
+              } else {
+                log('saved setups.json');
+                // save our setups.json to each save path
+                savePaths.forEach(function(path) {
+                  copy(LOCALAPPDATA + '/setups.json', path + 'setups.json', function(err) {
+                    if(err) {
+                      log('error copying: ' + path + 'setups.json \n' + err);
+                    } else {
+                      log('copied: ' + path + 'setups.json');
+                    }
+                  });
+                });
+              }
+            });
+            log('done');
+          });
+  		  }
+  	  }).catch(function(err) {
+  		  log('error zipping catch: ' + err);
+  	  });
+
     });
 }
 
@@ -420,7 +339,7 @@ $('#save-settings').on('click', function(e) {
   });
   fs.writeFile(LOCALAPPDATA + '/spm_settings.json', JSON.stringify(settings));
   $('.settings').hide();
-})
+});
 $('#go').on('click', function(e) {
   e.preventDefault();
   walkFiles();
