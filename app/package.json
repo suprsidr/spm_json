@@ -14,7 +14,7 @@
     "toolbar": false
   },
   "dependencies": {
-    "async": "^0.9.0",
+    "async": "^1.5.0",
     "node-zip-dir": "^1.0.2",
     "walkr": "^0.0.3"
   }
