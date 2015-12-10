@@ -285,18 +285,23 @@ function walkFiles() {
               } else {
                 log('saved setups.json');
                 // save our setups.json to each save path
-                savePaths.forEach(function(path) {
+                async.each(savePaths, function(path, callback) {
                   copy(LOCALAPPDATA + '/setups.json', path + 'setups.json', function(err) {
                     if(err) {
-                      log('error copying: ' + path + 'setups.json \n' + err);
+                      callback('error copying: ' + path + 'setups.json \n' + err);
                     } else {
                       log('copied: ' + path + 'setups.json');
+                      callback();
                     }
                   });
+                }, function(err) {
+                  if(err) {
+                    log('error: ' + err);
+                  }
+                  log('done');
                 });
               }
             });
-            log('done');
           });
   		  }
   	  }).catch(function(err) {
@@ -306,11 +311,11 @@ function walkFiles() {
     });
 }
 
-$('#save').on('change', function (e) {
-  var self = this
-  fs.readFile(LOCALAPPDATA + '/setups.json', 'utf-8', function (err, contents) {
+$('#setups, #srd').on('change', function (e) {
+  var self = this;
+  fs.readFile(LOCALAPPDATA + '/' + self.id + '.json', 'utf-8', function (err, contents) {
     if(err || contents === '') {
-      log('error reading setups.json: ' + err);
+      log('error reading ' + self.id + '.json: ' + err);
     } else {
       fs.writeFile(self.value, contents, function(err) {
         if(err) {
@@ -344,9 +349,10 @@ $('#go').on('click', function(e) {
   e.preventDefault();
   walkFiles();
 });
-$('a').on('click', function(e) {
+$('.savers a').on('click', function(e) {
   e.preventDefault();
-  $('#save').trigger('click');
+  var h  = $(this).attr('href');
+  $('#' + h).trigger('click');
 });
 $('.x-cogs').on('click', function(e) {
   e.preventDefault();
