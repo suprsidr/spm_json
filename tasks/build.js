@@ -46,7 +46,7 @@ var copyTask = function () {
     });
 };
 gulp.task('copy', ['clean'], copyTask);
-gulp.task('copy-watch', copyTask);
+//gulp.task('copy-watch', copyTask);
 
 
 var transpileTask = function () {
@@ -99,7 +99,7 @@ gulp.task('finalize', ['clean'], function () {
 
 gulp.task('watch', function () {
     //gulp.watch(paths.jsCodeToTranspile, ['transpile-watch']);
-    gulp.watch(paths.copyFromAppDir, { cwd: 'app' }, ['copy-watch']);
+    gulp.watch(paths.copyFromAppDir, { cwd: 'app' }/*, ['copy-watch']*/);
     //gulp.watch('app/**/*.less', ['less-watch']);
 });
 
