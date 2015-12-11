@@ -6,7 +6,7 @@ var gui = require('nw.gui'),
     walkr = require('walkr'),
     path = require('path'),
     async = require("async"),
-    exec = require('child_process').exec,
+    exec = require('child_process').execFile,
     zipper = require('node-zip-dir'),
     version = require(path.join(process.cwd(), 'package.json')).version,
     LOCALAPPDATA = path.join(process.env.LOCALAPPDATA, 'SPM_JSON');
@@ -95,7 +95,7 @@ fs.readFile(LOCALAPPDATA + '/spm_settings.json', 'utf-8', function (err, content
 	    transmitterFilesPath: '//marketing/internal/Market Share/Spektrum SPM Files for Upload/',
       savePaths: ['//deviis/ProdInfo/Files/', '//testiis/websites/ProdInfo/Files/', '//cmp02-web01-tst/websites/prodinfo/Files/', '//cmp02-nexus01/websites/prodinfo/Files/'],
       exts: ['spm','srm','srd'],
-      //tfsPath: 'C:\\xampp\\htdocs\\StaticCMSContent\\media\\scripts\\',
+      //tfsPath: 'C:\\\\xampp\\htdocs\\StaticCMSContent\\media\\scripts\\',
       dirs: ['DX7s_Setups', 'DX8_Setups', 'DXe_Setups', 'Gen2_Setups'],
       transmitters: {
         DX7s_Setups: ['SPM7800'],
@@ -114,16 +114,7 @@ fs.readFile(LOCALAPPDATA + '/spm_settings.json', 'utf-8', function (err, content
   } else {
     settings = JSON.parse(contents);
   }
-
-  // Try working with TFS
-  /*exec('C:\\Program%20Files%20%28x86%29\\Microsoft%20Visual%20Studio%2011.0\\Common7\\IDE\\tf.exe checkout ' + path.join(settings.tfsPath, 'setups.json'),
-  function (error, stdout, stderr) {
-    console.log('stdout: ' + stdout);
-    console.log('stderr: ' + stderr);
-    if (error !== null) {
-      console.log('exec error: ' + error);
-    }
-  });*/
+  //console.log(process.env);
 
   setup();
 });
@@ -273,7 +264,7 @@ function walkFiles() {
                 log('error saving settings: ' + err);
               }else {
                 log('saved spm_settings.json');
-                $('a[href="setups"]').show();
+                $('a[href="setups"], .savers').show();
               }
             });
             //console.log(files);
@@ -519,4 +510,12 @@ $('.savers a').on('click', function(e) {
 $('.x-cogs').on('click', function(e) {
   e.preventDefault();
   gui.Window.get().showDevTools();
+});
+$('.x-info').on('click', function(e) {
+  e.preventDefault();
+  $('#info').show();
+});
+$('.info-closer').on('click', function(e) {
+  e.preventDefault();
+  $('#info').hide();
 });

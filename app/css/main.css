@@ -2615,14 +2615,14 @@ body {
 #content {
 	position: relative;
 }
-.settings {
+.settings, #info {
 	display: none;
 }
 [href="transmitters"] {
 	float: right;
 }
 
-.x-closer, .settings-closer {
+.x-closer, .settings-closer, .info-closer {
 	position: relative;
 	float: right;
 	height: 44px;
@@ -2636,11 +2636,11 @@ body {
 	cursor: pointer;
 }
 
-.x-closer:hover, .settings-closer:hover {
+.x-closer:hover, .settings-closer:hover, .info-closer:hover {
 	color: #b74f0e;
 }
 
-.settings {
+.settings, #info {
 	position: absolute;
 	top: 0;
 	right: 0;
@@ -2654,18 +2654,46 @@ body {
 	background-color: #f9f9f9;
 	box-shadow: 0 0 3px rgba(0,0,0,.5);
 }
-
+#info {
+  max-height: 60%;
+}
+#info ul{
+  margin: 0;
+  list-style: none;
+  font-size: .9rem;
+}
+.savers {
+  position: relative;
+  padding-right: 36px;
+  float: right;
+  margin-bottom: 0;
+  display: none;
+  float: right;
+}
+.x-cogs {
+  float: right;
+}
 .icon {
   display: inline-block;
   color: #e56411;
-  fill: currentColor; }
+  fill: currentColor;
+}
 
-.icon-cogs {
-	float: right;
+.icon-cogs, .icon-info {
   color: #e56411;
   width: 24px;
   height: 24px;
   margin-top: 28px; }
-  .icon-squared-cross:hover {
-    color: #999;
-    fill: currentColor; }
+.icon-cogs:hover, .icon-info:hover {
+  color: #b74f0e;
+  fill: currentColor;
+}
+.icon-info {
+  margin: 0;
+}
+.x-info {
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin: 0;
+}
