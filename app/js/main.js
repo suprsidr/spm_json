@@ -47,12 +47,16 @@ var textarea = document.getElementById('thetext');
 
 Object.prototype.concat = function(o) {
   for (var key in o) {
-    if(typeof o[key] === 'object') {
-      for (var k in o[key]) {
-        this[key][k] = o[key][k];
+    if(o.hasOwnProperty(key)) {
+      if(typeof o[key] === 'object') { // only 2 levels deep for this app
+        for (var k in o[key]) {
+          if(o[key].hasOwnProperty(k)) {
+            this[key][k] = o[key][k];
+          }
+        }
+      } else {
+        this[key] = o[key];
       }
-    } else {
-      this[key] = o[key];
     }
   }
   return this;
@@ -104,7 +108,7 @@ fs.readFile(LOCALAPPDATA + '/spm_settings.json', 'utf-8', function (err, content
         Gen2_Setups: ['SPM6700', 'SPMR6700', 'SPM7000', 'SPM9900', 'SPMR9900', 'SPM18000', 'SPM18800', 'SPM18100', 'SPM18200']
       },
       filesCopied: {}
-    }
+    };
 	  settings.dirs.forEach(function(dir) {
 		  settings.filesCopied[dir] = {};
 	  });
@@ -114,8 +118,6 @@ fs.readFile(LOCALAPPDATA + '/spm_settings.json', 'utf-8', function (err, content
   } else {
     settings = JSON.parse(contents);
   }
-  //console.log(process.env);
-
   setup();
 });
 
@@ -254,7 +256,7 @@ function walkFiles() {
             });
           }, function(err) {
             if(err) {
-              log('savePaths each error: ' + err)
+              log('savePaths each error: ' + err);
             }
             //log('done savePaths each');  // launch next step
             // save our setting w/ the list of files copied
@@ -338,7 +340,7 @@ function walkSrdFiles() {
       obj[prodId] = {
         title: title,
         file: file.name
-      }
+      };
       // check to see if we've got this one already
       if(!settings.filesCopied.srd[prodId]) {
         t += ' - adding to copy queue';

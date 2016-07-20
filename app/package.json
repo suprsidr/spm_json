@@ -16,6 +16,8 @@
   "dependencies": {
     "async": "^1.5.0",
     "node-zip-dir": "^1.0.2",
-    "walkr": "^0.0.3"
+    "walkr": "^0.0.3",
+    "bufferhelper": "^0.2.1",
+    "iconv-lite": "^0.4.13"
   }
 }
